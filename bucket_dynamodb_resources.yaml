@@ -1,0 +1,51 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Terraform State File Store"
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment
+Resources:
+  s3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub terraformstate001-${Env}-bucket
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+  dynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub terraformstate001-${Env}-table
+      AttributeDefinitions:
+      - AttributeName: LockID
+        AttributeType: S
+      KeySchema:
+      - AttributeName: LockID
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 1
+
+
+Outputs:
+  s3BucketOut:
+    Description: The S3 bucket created
+    Value:
+      Fn::GetAtt:
+      - s3Bucket
+      - Arn
+  dynamodbOut:
+    Description: The DynamoDB created
+    Value:
+      Fn::GetAtt:
+      - dynamoDBTable
+      - Arn
